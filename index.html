@@ -1,0 +1,2982 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <script>
+    (() => {
+      const stopZoom = (event) => event.preventDefault();
+      document.addEventListener('gesturestart', stopZoom, { passive: false });
+      document.addEventListener('gesturechange', stopZoom, { passive: false });
+      document.addEventListener('gestureend', stopZoom, { passive: false });
+      document.addEventListener('dblclick', stopZoom, { passive: false });
+      document.addEventListener('touchmove', (event) => {
+        if (event.touches.length > 1) event.preventDefault();
+      }, { passive: false });
+      document.addEventListener('wheel', (event) => {
+        if (event.ctrlKey || event.metaKey) event.preventDefault();
+      }, { passive: false });
+      document.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && ['+', '-', '=', '0'].includes(event.key)) event.preventDefault();
+      });
+    })();
+  </script>
+  <title>Student Shuffle</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --void: #031d12;
+      --deep: #06381f;
+      --green: #128a4c;
+      --lime: #70e37d;
+      --mint: #d9f2cb;
+      --panel: #a9caa2;
+      --paper: #effbea;
+      --ink: #061b10;
+      --shadow: #052414;
+      --edge-dark: #31563a;
+      --edge-mid: #638468;
+      --edge-light: #f6fff0;
+      --gold: #ffe36d;
+      --warning: #b83322;
+      --blue: #0b5d3c;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 5px;
+      color: var(--ink);
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(112, 227, 125, 0.35), transparent 24rem),
+        radial-gradient(circle at 82% 30%, rgba(255, 227, 109, 0.16), transparent 18rem),
+        linear-gradient(135deg, #031d12 0%, #075d37 48%, #02160d 100%);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(217, 242, 203, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(217, 242, 203, 0.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mix-blend-mode: screen;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.06) 0,
+        rgba(255, 255, 255, 0.06) 1px,
+        transparent 1px,
+        transparent 5px
+      );
+      opacity: 0.35;
+    }
+
+    .shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .window {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      background: var(--panel);
+      border-top: 3px solid var(--edge-light);
+      border-left: 3px solid var(--edge-light);
+      border-right: 3px solid #1a341f;
+      border-bottom: 3px solid #1a341f;
+      box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.55);
+      min-height: calc(100vh - 10px);
+      overflow: visible;
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 34px;
+      padding: 5px 7px;
+      color: #f8fff3;
+      background: linear-gradient(90deg, #03401d, #13a45b 52%, #0b5d3c);
+      border-bottom: 2px solid #032414;
+      text-shadow: 1px 1px 0 #001c0e;
+      font-weight: 700;
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .title-icon {
+      width: 20px;
+      height: 20px;
+      display: inline-grid;
+      place-items: center;
+      color: var(--ink);
+      background: var(--gold);
+      border-top: 2px solid #fff8bc;
+      border-left: 2px solid #fff8bc;
+      border-right: 2px solid #8b7b1b;
+      border-bottom: 2px solid #8b7b1b;
+      font-family: "Courier New", monospace;
+      font-weight: 900;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .window-buttons {
+      display: flex;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    .fake-button {
+      width: 16px;
+      height: 16px;
+      background: #b7d3ad;
+      border-top: 2px solid #f8fff3;
+      border-left: 2px solid #f8fff3;
+      border-right: 2px solid #31563a;
+      border-bottom: 2px solid #31563a;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      gap: 8px;
+      align-content: start;
+      padding: 8px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-top: 2px solid var(--edge-light);
+      border-left: 2px solid var(--edge-light);
+      border-right: 2px solid var(--edge-mid);
+      border-bottom: 2px solid var(--edge-mid);
+      padding: 8px;
+    }
+
+    .panel + .panel {
+      margin-top: 8px;
+    }
+
+    .panel-title {
+      margin: -3px -3px 6px;
+      padding: 4px 6px;
+      color: #efffea;
+      background: linear-gradient(90deg, #06381f, #128a4c);
+      border-bottom: 2px solid #032414;
+      font-size: 13px;
+      font-weight: 700;
+      text-shadow: 1px 1px 0 #001a22;
+    }
+
+    label {
+      display: block;
+      margin: 6px 0 3px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      color: var(--ink);
+      background: var(--paper);
+      border-top: 2px solid #34563b;
+      border-left: 2px solid #34563b;
+      border-right: 2px solid var(--edge-light);
+      border-bottom: 2px solid var(--edge-light);
+      border-radius: 0;
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.35;
+      outline: none;
+    }
+
+    input {
+      min-height: 34px;
+      padding: 5px 7px;
+    }
+
+    select {
+      min-height: 34px;
+      padding: 5px 7px;
+    }
+
+    input[type="checkbox"] {
+      width: 19px;
+      height: 19px;
+      min-height: 0;
+      padding: 0;
+      accent-color: var(--green);
+      flex: 0 0 auto;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      padding: 6px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      box-shadow: inset 0 0 0 2px rgba(255, 227, 109, 0.85);
+    }
+
+    .hint {
+      margin: 4px 0 0;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 7px;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 36px;
+      margin: 8px 0 0;
+      padding: 5px;
+      background: #d9f2cb;
+      border-top: 2px solid var(--edge-light);
+      border-left: 2px solid var(--edge-light);
+      border-right: 2px solid var(--edge-mid);
+      border-bottom: 2px solid var(--edge-mid);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      min-height: 36px;
+      padding: 5px 8px;
+      color: var(--ink);
+      background: #b7d3ad;
+      border-top: 3px solid var(--edge-light);
+      border-left: 3px solid var(--edge-light);
+      border-right: 3px solid var(--edge-dark);
+      border-bottom: 3px solid var(--edge-dark);
+      border-radius: 0;
+      box-shadow: 2px 2px 0 var(--shadow);
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+    }
+
+    button:active {
+      transform: translate(2px, 2px);
+      border-top-color: var(--edge-dark);
+      border-left-color: var(--edge-dark);
+      border-right-color: var(--edge-light);
+      border-bottom-color: var(--edge-light);
+      box-shadow: none;
+    }
+
+    button:disabled {
+      color: #627568;
+      cursor: not-allowed;
+      background: #98ad92;
+    }
+
+    .primary {
+      background: var(--lime);
+    }
+
+    .secondary {
+      background: #d8e8b3;
+    }
+
+    .danger {
+      color: #fff6ee;
+      background: var(--warning);
+      text-shadow: 1px 1px 0 #561208;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      color: #f9fff4;
+      background: var(--deep);
+      border-top: 2px solid #8ee99b;
+      border-left: 2px solid #8ee99b;
+      border-right: 2px solid #032313;
+      border-bottom: 2px solid #032313;
+      font-family: "Courier New", monospace;
+      line-height: 1;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .preset-list {
+      min-height: 54px;
+      max-height: 82px;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 4px;
+      overflow: auto;
+      padding: 5px;
+      background: var(--paper);
+      border-top: 2px solid #34563b;
+      border-left: 2px solid #34563b;
+      border-right: 2px solid var(--edge-light);
+      border-bottom: 2px solid var(--edge-light);
+    }
+
+    .preset-name {
+      display: inline-block;
+      padding: 3px 5px;
+      color: #efffea;
+      background: #0b5d3c;
+      border-top: 2px solid #61be70;
+      border-left: 2px solid #61be70;
+      border-right: 2px solid #032313;
+      border-bottom: 2px solid #032313;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .preset-state {
+      margin-top: 6px;
+      min-height: 20px;
+      padding: 2px 5px;
+      background: #c8ddb5;
+      border-top: 2px solid #638468;
+      border-left: 2px solid #638468;
+      border-right: 2px solid #efffea;
+      border-bottom: 2px solid #efffea;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .stat {
+      min-height: 54px;
+      background: var(--paper);
+      border-top: 2px solid #34563b;
+      border-left: 2px solid #34563b;
+      border-right: 2px solid var(--edge-light);
+      border-bottom: 2px solid var(--edge-light);
+      padding: 5px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      margin-top: 2px;
+      font-family: "Courier New", monospace;
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .app-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
+      gap: 8px;
+      align-items: start;
+      overflow: visible;
+    }
+
+    .app-main .panel + .panel {
+      margin-top: 0;
+    }
+
+    .order-panel {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(112, 227, 125, 0.2), transparent 38%),
+        #8ebd88;
+    }
+
+    .order-panel::after {
+      content: "";
+      position: absolute;
+      inset: 30px 10px 10px;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(239, 255, 234, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(239, 255, 234, 0.07) 1px, transparent 1px);
+      background-size: 16px 16px;
+      opacity: 0.5;
+    }
+
+    .order-panel .panel-title {
+      position: relative;
+      z-index: 1;
+      background:
+        linear-gradient(90deg, #022313, #108d4f 55%, #70e37d);
+      color: #f8fff3;
+      letter-spacing: 0;
+    }
+
+    .order-panel .panel-title::after {
+      content: "QUEUE READY";
+      float: right;
+      color: var(--gold);
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      text-shadow: 1px 1px 0 #001c0e;
+    }
+
+    .console-panel {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .class-panel {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .attendance-panel {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .dispute-panel {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .randomizer {
+      display: grid;
+      grid-template-columns: minmax(128px, 160px) minmax(0, 1fr);
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .machine {
+      display: block;
+      position: relative;
+      min-height: 214px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(112, 227, 125, 0.38), transparent 4.8rem),
+        radial-gradient(circle at 50% 42%, rgba(217, 242, 203, 0.16), transparent 7rem),
+        linear-gradient(145deg, #021209, #064521 56%, #031d12);
+      border-top: 2px solid #010b07;
+      border-left: 2px solid #010b07;
+      border-right: 2px solid #b6ff88;
+      border-bottom: 2px solid #b6ff88;
+    }
+
+    .machine::before,
+    .machine::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(217, 242, 203, 0.56);
+    }
+
+    .machine::after {
+      inset: 26px;
+      border-color: rgba(112, 227, 125, 0.46);
+      transform: skew(-6deg);
+    }
+
+    .orb {
+      width: 110px;
+      height: 110px;
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      z-index: 3;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, #010b07 0 17%, rgba(7, 55, 28, 0.86) 18% 32%, #70e37d 33% 38%, #075a31 46%, #03120a 70%, #010609 100%);
+      box-shadow:
+        inset -18px -24px 28px rgba(0, 0, 0, 0.45),
+        inset 15px 13px 18px rgba(217, 242, 203, 0.24),
+        0 0 18px rgba(112, 227, 125, 0.92),
+        0 0 42px rgba(217, 242, 203, 0.34);
+      animation: generatorCore 3.8s ease-in-out infinite;
+    }
+
+    .orb::before,
+    .orb::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .orb::before {
+      inset: 25px;
+      background: radial-gradient(circle, #efffea 0, rgba(217, 242, 203, 0.92) 23%, rgba(112, 227, 125, 0.26) 68%, transparent 70%);
+      box-shadow: 0 0 18px rgba(217, 242, 203, 0.92);
+      animation: coreFlicker 1.8s steps(3, end) infinite;
+    }
+
+    .orb::after {
+      inset: -10px;
+      border: 2px solid rgba(112, 227, 125, 0.62);
+      box-shadow: 0 0 20px rgba(217, 242, 203, 0.78);
+      opacity: 0.72;
+      animation: coreHalo 2.7s ease-in-out infinite;
+    }
+
+    .generator-aura {
+      width: 164px;
+      height: 164px;
+      position: absolute;
+      left: calc(50% - 82px);
+      top: calc(42% - 82px);
+      z-index: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(112, 227, 125, 0.38) 0, rgba(217, 242, 203, 0.16) 42%, transparent 70%);
+      animation: auraPulse 3.8s ease-in-out infinite;
+    }
+
+    .ring {
+      width: 150px;
+      height: 36px;
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      z-index: 4;
+      transform: translate(-50%, -50%) rotate(-11deg);
+      border: 4px solid rgba(112, 227, 125, 0.92);
+      border-radius: 50%;
+      box-shadow: 0 0 14px rgba(112, 227, 125, 0.8), inset 0 0 10px rgba(112, 227, 125, 0.3);
+      animation: ringSpin 4.4s linear infinite;
+    }
+
+    .ring-two {
+      width: 132px;
+      height: 48px;
+      border-width: 3px;
+      border-color: rgba(217, 242, 203, 0.9);
+      box-shadow: 0 0 14px rgba(217, 242, 203, 0.78), inset 0 0 8px rgba(217, 242, 203, 0.3);
+      animation: ringSpinReverse 5.7s linear infinite;
+    }
+
+    .orbit-track {
+      width: 150px;
+      height: 150px;
+      position: absolute;
+      left: calc(50% - 75px);
+      top: calc(42% - 75px);
+      z-index: 5;
+      border: 1px dotted rgba(217, 242, 203, 0.72);
+      border-radius: 50%;
+      box-shadow: inset 0 0 14px rgba(112, 227, 125, 0.2);
+      animation: orbitSpin 3.1s linear infinite;
+    }
+
+    .orbit-track::before,
+    .orbit-track::after {
+      content: "";
+      width: 9px;
+      height: 9px;
+      position: absolute;
+      top: -5px;
+      left: calc(50% - 4px);
+      border-radius: 50%;
+      background: #d9f2cb;
+      box-shadow: 0 0 6px #d9f2cb, 0 0 15px rgba(217, 242, 203, 0.9);
+    }
+
+    .orbit-track::before {
+      top: auto;
+      bottom: -5px;
+      background: #70e37d;
+      box-shadow: 0 0 6px #70e37d, 0 0 15px rgba(112, 227, 125, 0.9);
+    }
+
+    .particle {
+      position: absolute;
+      z-index: 6;
+      width: 5px;
+      height: 5px;
+      background: #d9f2cb;
+      box-shadow: 0 0 9px #d9f2cb;
+    }
+
+    .p2,
+    .p4 {
+      background: #70e37d;
+      box-shadow: 0 0 9px #70e37d;
+    }
+
+    .p1 { left: 22%; top: 18%; animation: blink 1.4s steps(2, end) infinite; }
+    .p2 { left: 76%; top: 24%; animation: blink 1.9s steps(2, end) infinite; }
+    .p3 { left: 16%; top: 76%; animation: blink 1.7s steps(2, end) infinite; }
+    .p4 { left: 82%; top: 70%; animation: blink 2.1s steps(2, end) infinite; }
+
+    .screen-label {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      z-index: 7;
+      min-height: 34px;
+      padding: 5px;
+      color: #efffea;
+      background: #031d12;
+      border-top: 2px solid #010b07;
+      border-left: 2px solid #010b07;
+      border-right: 2px solid #61be70;
+      border-bottom: 2px solid #61be70;
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.2;
+    }
+
+    .portal-callout {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      z-index: 8;
+      padding: 4px 6px;
+      color: #efffea;
+      background: rgba(3, 29, 18, 0.9);
+      border: 1px solid #b6ff88;
+      box-shadow: 2px 2px 0 #010609;
+      font-family: "Courier New", monospace;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(0.7);
+    }
+
+    .machine.is-summoning {
+      animation: portalSummon 1.35s steps(5, end);
+    }
+
+    .machine.is-summoning .generator-aura {
+      animation-duration: 450ms;
+      animation-iteration-count: 3;
+    }
+
+    .machine.is-summoning .ring {
+      animation-duration: 1s;
+    }
+
+    .machine.is-summoning .ring-two {
+      animation-duration: 1.2s;
+    }
+
+    .machine.is-summoning .orbit-track {
+      animation-duration: 760ms;
+    }
+
+    .machine.is-summoning .portal-callout {
+      animation: portalCallout 1.35s steps(5, end);
+    }
+
+    .order-panel.is-receiving {
+      animation: queueReceive 2.8s steps(8, end);
+    }
+
+    .order-panel::before {
+      content: "";
+      position: absolute;
+      top: 34px;
+      bottom: 0;
+      left: -62%;
+      z-index: 2;
+      width: 58%;
+      opacity: 0;
+      pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(112, 227, 125, 0.2), rgba(239, 255, 234, 0.92), rgba(255, 227, 109, 0.28), transparent);
+      transform: skewX(-18deg);
+      mix-blend-mode: screen;
+    }
+
+    .order-panel.is-receiving::before {
+      animation: queueBeam 2.05s steps(10, end);
+    }
+
+    .queue-dialog {
+      width: min(640px, calc(100vw - 24px));
+      max-width: calc(100vw - 24px);
+      max-height: calc(100dvh - 24px);
+      margin: auto;
+      padding: 7px;
+      overflow: hidden;
+      transform-origin: 50% 48%;
+      isolation: isolate;
+      color: var(--ink);
+      background: var(--panel);
+      border-top: 3px solid var(--edge-light);
+      border-left: 3px solid var(--edge-light);
+      border-right: 3px solid #1a341f;
+      border-bottom: 3px solid #1a341f;
+      box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.7);
+    }
+
+    .queue-dialog::backdrop {
+      background:
+        repeating-linear-gradient(0deg, rgba(217, 242, 203, 0.05) 0 1px, transparent 1px 5px),
+        rgba(1, 18, 9, 0.74);
+    }
+
+    .queue-dialog[open] {
+      animation: queueDialogBurst 900ms steps(9, end);
+    }
+
+    .queue-dialog[open]::backdrop {
+      animation: queueBackdropBurst 900ms steps(9, end);
+    }
+
+    .queue-dialog[open] .queue-dialog-titlebar {
+      animation: queueTitleZap 900ms steps(7, end);
+    }
+
+    .queue-dialog .order-panel {
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      gap: 7px;
+      min-height: 0;
+      max-height: calc(100dvh - 52px);
+      padding: 7px;
+      border-top: 2px solid var(--edge-light);
+      border-left: 2px solid var(--edge-light);
+      border-right: 2px solid var(--edge-mid);
+      border-bottom: 2px solid var(--edge-mid);
+    }
+
+    .queue-dialog-titlebar {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 30px;
+      padding: 4px 5px;
+      color: #f8fff3;
+      background: linear-gradient(90deg, #022313, #108d4f 55%, #70e37d);
+      border-bottom: 2px solid #001c0e;
+      font-size: 13px;
+      text-shadow: 1px 1px 0 #001c0e;
+    }
+
+    .queue-dialog-title {
+      margin: 0;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .order-lock-strip {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0;
+      padding: 4px 6px;
+      color: #b6ff88;
+      background:
+        repeating-linear-gradient(90deg, rgba(112, 227, 125, 0.12) 0 5px, transparent 5px 10px),
+        #032313;
+      border-top: 2px solid #010b07;
+      border-left: 2px solid #010b07;
+      border-right: 2px solid #61be70;
+      border-bottom: 2px solid #61be70;
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-shadow: 1px 1px 0 #001c0e;
+    }
+
+    .order-lock-detail {
+      color: var(--gold);
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .queue-close,
+    .dialog-close {
+      flex: 0 0 auto;
+      width: 25px;
+      min-height: 25px;
+      padding: 0;
+      color: #032313;
+      background: #b7d3ad;
+      border-top-width: 2px;
+      border-left-width: 2px;
+      border-right-width: 2px;
+      border-bottom-width: 2px;
+      box-shadow: 1px 1px 0 #032313;
+      font-family: "Courier New", monospace;
+      font-size: 19px;
+      line-height: 1;
+    }
+
+    .class-dialog {
+      width: min(500px, calc(100vw - 24px));
+      max-width: calc(100vw - 24px);
+      max-height: calc(100dvh - 24px);
+      margin: auto;
+      padding: 7px;
+      overflow: hidden;
+      color: var(--ink);
+      background: var(--panel);
+      border-top: 3px solid var(--edge-light);
+      border-left: 3px solid var(--edge-light);
+      border-right: 3px solid #1a341f;
+      border-bottom: 3px solid #1a341f;
+      box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.7);
+    }
+
+    .class-dialog::backdrop {
+      background:
+        repeating-linear-gradient(0deg, rgba(217, 242, 203, 0.05) 0 1px, transparent 1px 5px),
+        rgba(1, 18, 9, 0.74);
+    }
+
+    .class-dialog-panel {
+      display: grid;
+      gap: 7px;
+      max-height: calc(100dvh - 52px);
+      padding: 7px;
+      background: #9bbd95;
+      border-top: 2px solid var(--edge-light);
+      border-left: 2px solid var(--edge-light);
+      border-right: 2px solid var(--edge-mid);
+      border-bottom: 2px solid var(--edge-mid);
+    }
+
+    .class-dialog-body {
+      display: grid;
+      gap: 8px;
+      overflow-y: auto;
+      padding: 8px;
+      background: #c8ddb5;
+      border-top: 2px solid #638468;
+      border-left: 2px solid #638468;
+      border-right: 2px solid #efffea;
+      border-bottom: 2px solid #efffea;
+    }
+
+    .class-dialog-body label {
+      margin: 0;
+    }
+
+    .editing-class-name {
+      margin: 0;
+      padding: 4px 6px;
+      color: #efffea;
+      background: #06381f;
+      border-top: 2px solid #128a4c;
+      border-left: 2px solid #128a4c;
+      border-right: 2px solid #032313;
+      border-bottom: 2px solid #032313;
+      font-family: "Courier New", monospace;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .class-dialog textarea {
+      min-height: 230px;
+      resize: vertical;
+    }
+
+    .class-editor-note {
+      min-height: 18px;
+      margin: 0;
+      color: #315039;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .class-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .queue-dialog .order-wrap {
+      min-height: 0;
+      height: auto;
+      overflow-y: auto;
+      padding: 8px 8px 8px 38px;
+      background:
+        linear-gradient(rgba(18, 138, 76, 0.13) 1px, transparent 1px),
+        linear-gradient(90deg, transparent 26px, rgba(18, 138, 76, 0.38) 26px 28px, transparent 28px),
+        #effbea;
+      background-size: 100% 22px, 100% 100%, auto;
+    }
+
+    .receipt-scan {
+      position: absolute;
+      z-index: 3;
+      top: 5px;
+      bottom: 5px;
+      left: -8px;
+      width: 3px;
+      opacity: 0;
+      pointer-events: none;
+      background: #b6ff88;
+      box-shadow: 0 0 7px #b6ff88, 0 0 18px rgba(112, 227, 125, 0.92);
+    }
+
+    .current {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 214px;
+      background: var(--paper);
+      border-top: 2px solid #34563b;
+      border-left: 2px solid #34563b;
+      border-right: 2px solid var(--edge-light);
+      border-bottom: 2px solid var(--edge-light);
+    }
+
+    .current-title {
+      padding: 5px;
+      color: #efffea;
+      background: linear-gradient(90deg, var(--deep), var(--green));
+      font-weight: 700;
+      text-shadow: 1px 1px 0 #001c0e;
+    }
+
+    .current-name {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 102px;
+      padding: 10px;
+      font-family: "Courier New", monospace;
+      font-size: 34px;
+      font-weight: 900;
+      text-align: center;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      background:
+        linear-gradient(90deg, rgba(18, 138, 76, 0.12) 50%, transparent 50%),
+        #effbea;
+      background-size: 18px 18px;
+    }
+
+    .current-footer {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 5px;
+      background: #c8ddb5;
+      border-top: 2px solid #638468;
+    }
+
+    .order-wrap {
+      position: relative;
+      z-index: 1;
+      min-height: 182px;
+      overflow: visible;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          rgba(112, 227, 125, 0.12) 0,
+          rgba(112, 227, 125, 0.12) 10px,
+          rgba(3, 29, 18, 0.18) 10px,
+          rgba(3, 29, 18, 0.18) 20px
+        ),
+        linear-gradient(135deg, #06381f, #031d12);
+      border-top: 2px solid #021209;
+      border-left: 2px solid #021209;
+      border-right: 2px solid #8ee99b;
+      border-bottom: 2px solid #8ee99b;
+      padding: 6px;
+      box-shadow: inset 0 0 0 2px rgba(255, 227, 109, 0.16);
+    }
+
+    .order-list {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: students;
+    }
+
+    .order-list li {
+      counter-increment: students;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      align-items: center;
+      min-height: 28px;
+      margin-bottom: 5px;
+      background:
+        linear-gradient(90deg, rgba(255, 227, 109, 0.16), transparent 40%),
+        #c9efba;
+      border-top: 2px solid #f8fff3;
+      border-left: 2px solid #f8fff3;
+      border-right: 2px solid #34563b;
+      border-bottom: 2px solid #34563b;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22);
+    }
+
+    .order-list li::before {
+      content: counter(students);
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      color: #032313;
+      background: var(--gold);
+      border-right: 2px solid #7f6c14;
+      font-family: "Courier New", monospace;
+      font-weight: 900;
+    }
+
+    .order-list li.active {
+      outline: 2px solid #f8fff3;
+      background:
+        linear-gradient(90deg, rgba(255, 227, 109, 0.42), transparent 45%),
+        #70e37d;
+      box-shadow:
+        2px 2px 0 rgba(0, 0, 0, 0.22),
+        0 0 12px rgba(255, 227, 109, 0.72);
+    }
+
+    .order-list li.is-first {
+      outline: 2px solid #f8fff3;
+      background:
+        linear-gradient(90deg, rgba(255, 227, 109, 0.52), transparent 55%),
+        #95e888;
+      box-shadow:
+        2px 2px 0 rgba(0, 0, 0, 0.22),
+        0 0 12px rgba(112, 227, 125, 0.68);
+    }
+
+    .order-name {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 4px 7px;
+      padding: 5px 7px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .order-name-text {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .up-first-badge {
+      flex: 0 0 auto;
+      padding: 2px 4px;
+      color: #032313;
+      background: #b6ff88;
+      border-top: 1px solid #efffea;
+      border-left: 1px solid #efffea;
+      border-right: 1px solid #31563a;
+      border-bottom: 1px solid #31563a;
+      box-shadow: 1px 1px 0 rgba(3, 35, 19, 0.6);
+      font-family: "Courier New", monospace;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .queue-dialog .empty {
+      position: relative;
+      z-index: 1;
+      color: #06381f;
+      text-shadow: none;
+    }
+
+    .order-panel.is-revealing .receipt-scan {
+      animation: receiptScan 1.2s steps(12, end) 700ms both;
+    }
+
+    .order-panel.is-revealing .receipt-row {
+      animation: receiptRowReveal 360ms steps(5, end) calc(920ms + var(--reveal-delay)) both;
+    }
+
+    .order-panel.is-revealing .receipt-row::before {
+      animation: receiptTilePop 250ms steps(4, end) calc(960ms + var(--reveal-delay)) both;
+    }
+
+    .order-panel.is-revealing .order-name-text {
+      animation: receiptNameSnap 300ms steps(4, end) calc(1080ms + var(--reveal-delay)) both;
+    }
+
+    .order-panel.is-revealing .is-first .up-first-badge {
+      animation: upFirstStamp 260ms steps(4, end) 1300ms both;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 92px;
+      color: #d9f2cb;
+      text-align: center;
+      font-weight: 700;
+      padding: 14px;
+      text-shadow: 1px 1px 0 #001c0e;
+    }
+
+    .dispute-grid {
+      display: grid;
+      grid-template-columns: minmax(185px, 0.72fr) 1fr;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .dispute-grid textarea {
+      min-height: 92px;
+    }
+
+    .dispute-output {
+      min-height: 132px;
+      padding: 6px;
+      background: var(--paper);
+      border-top: 2px solid #34563b;
+      border-left: 2px solid #34563b;
+      border-right: 2px solid var(--edge-light);
+      border-bottom: 2px solid var(--edge-light);
+    }
+
+    .dispute-result {
+      min-height: 42px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 0;
+      padding: 7px;
+      color: #efffea;
+      background:
+        linear-gradient(90deg, rgba(255, 227, 109, 0.2) 50%, transparent 50%),
+        #06381f;
+      background-size: 18px 18px;
+      border-top: 2px solid #010b07;
+      border-left: 2px solid #010b07;
+      border-right: 2px solid #61be70;
+      border-bottom: 2px solid #61be70;
+      font-family: "Courier New", monospace;
+      font-size: 16px;
+      font-weight: 900;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .dispute-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: dispute;
+    }
+
+    .dispute-list li {
+      counter-increment: dispute;
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      align-items: center;
+      min-height: 31px;
+      margin-bottom: 4px;
+      background: #d9f2cb;
+      border-top: 2px solid #f8fff3;
+      border-left: 2px solid #f8fff3;
+      border-right: 2px solid #638468;
+      border-bottom: 2px solid #638468;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .dispute-list li::before {
+      content: "#" counter(dispute);
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      color: #efffea;
+      background: #0b5d3c;
+      border-right: 2px solid #123340;
+      font-family: "Courier New", monospace;
+      font-weight: 900;
+    }
+
+    .dispute-list li:first-child {
+      background: #fff2a7;
+      outline: 2px solid var(--gold);
+    }
+
+    .statusbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 6px;
+      align-items: center;
+      padding: 5px 7px;
+      border-top: 2px solid #638468;
+      background: #9bbd95;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-cell {
+      min-height: 20px;
+      padding: 2px 5px;
+      background: #c8ddb5;
+      border-top: 2px solid #638468;
+      border-left: 2px solid #638468;
+      border-right: 2px solid #efffea;
+      border-bottom: 2px solid #efffea;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sound-toggle {
+      min-height: 24px;
+      padding: 2px 6px;
+      font-size: 12px;
+      box-shadow: none;
+    }
+
+    .sound-toggle .icon {
+      width: 16px;
+      height: 16px;
+      font-size: 11px;
+    }
+
+    .sound-toggle.is-muted {
+      color: #344739;
+      background: #a7b69f;
+      border-top-color: #638468;
+      border-left-color: #638468;
+      border-right-color: #efffea;
+      border-bottom-color: #efffea;
+    }
+
+    .class-panel .preset-list {
+      min-height: 54px;
+      max-height: none;
+      overflow: visible;
+    }
+
+    .class-panel .preset-name {
+      padding: 3px 5px;
+      font-size: 12px;
+    }
+
+    .class-panel .toolbar {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .status-panel .stat {
+      min-height: 40px;
+      padding: 4px;
+    }
+
+    .status-panel .stat-value {
+      margin-top: 0;
+      font-size: 19px;
+    }
+
+    .attendance-panel {
+      min-height: 0;
+    }
+
+    .attendance-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      gap: 5px;
+      min-height: 96px;
+      max-height: none;
+      overflow: visible;
+      padding: 6px;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          rgba(112, 227, 125, 0.08) 0,
+          rgba(112, 227, 125, 0.08) 8px,
+          rgba(3, 29, 18, 0.1) 8px,
+          rgba(3, 29, 18, 0.1) 16px
+        ),
+        var(--paper);
+      border-top: 2px solid #34563b;
+      border-left: 2px solid #34563b;
+      border-right: 2px solid var(--edge-light);
+      border-bottom: 2px solid var(--edge-light);
+    }
+
+    .attendance-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 28px;
+      padding: 3px 7px;
+      color: #efffea;
+      background: #0b5d3c;
+      border-top: 2px solid #61be70;
+      border-left: 2px solid #61be70;
+      border-right: 2px solid #032313;
+      border-bottom: 2px solid #032313;
+      box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .attendance-chip.is-out {
+      color: #344739;
+      background: #a7b69f;
+      border-top-color: #638468;
+      border-left-color: #638468;
+      border-right-color: #efffea;
+      border-bottom-color: #efffea;
+      text-decoration: line-through;
+      opacity: 0.82;
+    }
+
+    .attendance-chip .mark {
+      width: 16px;
+      height: 16px;
+      display: inline-grid;
+      place-items: center;
+      background: var(--gold);
+      color: #032313;
+      border-right: 2px solid #7f6c14;
+      border-bottom: 2px solid #7f6c14;
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .attendance-state {
+      margin-top: 4px;
+      min-height: 20px;
+      padding: 3px 5px;
+      background: #c8ddb5;
+      border-top: 2px solid #638468;
+      border-left: 2px solid #638468;
+      border-right: 2px solid #efffea;
+      border-bottom: 2px solid #efffea;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dispute-panel .toolbar {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dispute-panel .wide {
+      grid-column: auto;
+    }
+
+    /* Daily workflow: rotate first, set up second, use extras only when needed. */
+    .workspace {
+      grid-template-rows: none;
+      gap: 10px;
+    }
+
+    .workspace > .panel {
+      margin-top: 0;
+    }
+
+    .rotation-deck,
+    .setup-today {
+      background:
+        linear-gradient(135deg, rgba(112, 227, 125, 0.16), transparent 38%),
+        var(--panel);
+    }
+
+    .rotation-deck > .panel-title,
+    .setup-today > .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .panel-title-detail {
+      color: var(--gold);
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      text-shadow: 1px 1px 0 #001c0e;
+    }
+
+    .rotation-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 640px);
+      gap: 8px;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .rotation-card,
+    .setup-card,
+    .extras-card {
+      min-width: 0;
+      padding: 7px;
+      background: rgba(217, 242, 203, 0.42);
+      border-top: 2px solid var(--edge-light);
+      border-left: 2px solid var(--edge-light);
+      border-right: 2px solid var(--edge-mid);
+      border-bottom: 2px solid var(--edge-mid);
+    }
+
+    .subpanel-title {
+      position: relative;
+      z-index: 1;
+      margin: -2px -2px 7px;
+      padding: 4px 6px;
+      color: #efffea;
+      background: linear-gradient(90deg, #06381f, #128a4c);
+      border-bottom: 2px solid #032414;
+      font-size: 12px;
+      font-weight: 700;
+      text-shadow: 1px 1px 0 #001a22;
+    }
+
+    .console-panel,
+    .order-panel,
+    .class-panel,
+    .attendance-panel,
+    .dispute-panel {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .console-panel {
+      background: rgba(169, 202, 162, 0.72);
+    }
+
+    .order-panel {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .order-panel::after {
+      inset: 42px 8px 8px;
+    }
+
+    .order-panel .subpanel-title {
+      background: linear-gradient(90deg, #022313, #108d4f 55%, #70e37d);
+    }
+
+    .order-wrap {
+      min-height: 286px;
+      height: calc(100% - 32px);
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .setup-today .class-panel {
+      display: grid;
+      align-content: start;
+    }
+
+    .class-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      margin-top: 7px;
+    }
+
+    .class-actions button {
+      min-height: 34px;
+    }
+
+    .quick-add {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 2px solid #638468;
+    }
+
+    .quick-add label {
+      margin-top: 0;
+    }
+
+    .quick-add-controls {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px;
+      margin-top: 4px;
+    }
+
+    .quick-add-controls button {
+      min-width: 72px;
+    }
+
+    .shuffle-bay.current {
+      position: relative;
+      display: block;
+      min-height: 214px;
+      overflow: hidden;
+      padding: 0;
+      background:
+        repeating-linear-gradient(45deg, rgba(255, 227, 109, 0.16) 0 8px, transparent 8px 16px),
+        linear-gradient(135deg, #b9e6a9, #6fcf78 54%, #138a4c);
+      border: 2px solid #34563b;
+    }
+
+    .shuffle-launch {
+      position: absolute;
+      inset: 7px;
+      isolation: isolate;
+      width: auto;
+      min-height: 0;
+      overflow: hidden;
+      flex-direction: column;
+      gap: 5px;
+      color: #f9fff4;
+      background:
+        radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.68) 0 3px, transparent 4px),
+        radial-gradient(circle at 82% 26%, rgba(255, 227, 109, 0.95) 0 4px, transparent 5px),
+        repeating-linear-gradient(90deg, rgba(3, 29, 18, 0.2) 0 7px, transparent 7px 14px),
+        linear-gradient(135deg, #0d7c43, #18b161 55%, #0a5b35);
+      border: 5px outset #b9f6a9;
+      box-shadow: 5px 5px 0 #032313, inset 0 0 0 3px rgba(255, 227, 109, 0.62);
+      font-family: "Courier New", monospace;
+      font-size: clamp(26px, 4vw, 46px);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      line-height: 0.95;
+      text-transform: uppercase;
+      text-shadow: 3px 3px 0 #022313;
+    }
+
+    .shuffle-launch:not(:disabled) {
+      animation: shuffleAttract 4.4s steps(2, end) infinite;
+    }
+
+    .shuffle-word,
+    .shuffle-hint {
+      position: relative;
+      z-index: 1;
+    }
+
+    .shuffle-hint {
+      color: var(--gold);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+    }
+
+    .shuffle-bay.is-shuffling {
+      animation: shufflePop 520ms steps(2, end);
+      z-index: 2;
+    }
+
+    .shuffle-bay.is-shuffling .shuffle-launch,
+    .shuffle-launch:active {
+      animation: none;
+    }
+
+    .shuffle-launch:disabled::after {
+      content: "LOAD 2+ STUDENTS";
+      position: absolute;
+      right: 8px;
+      bottom: 7px;
+      padding: 3px 5px;
+      background: #a7b69f;
+      color: #344739;
+      border: 2px outset #d9f2cb;
+      box-shadow: 2px 2px 0 #34563b;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-shadow: none;
+    }
+
+    .shuffle-bay.is-generating .shuffle-launch:disabled::after {
+      display: none;
+    }
+
+    .shuffle-bay.is-generating .shuffle-launch:disabled {
+      color: #f9fff4;
+      cursor: wait;
+      background:
+        radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.68) 0 3px, transparent 4px),
+        radial-gradient(circle at 82% 26%, rgba(255, 227, 109, 0.95) 0 4px, transparent 5px),
+        repeating-linear-gradient(90deg, rgba(3, 29, 18, 0.2) 0 7px, transparent 7px 14px),
+        linear-gradient(135deg, #0d7c43, #18b161 55%, #0a5b35);
+    }
+
+    .shuffle-launch:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 3px;
+    }
+
+    .screen-reader-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes shufflePop {
+      0% { transform: translate(0, 0) rotate(0deg) scale(1); filter: saturate(1); }
+      12% { transform: translate(-7px, 3px) rotate(-2deg) scale(1.04); filter: saturate(1.7); }
+      25% { transform: translate(8px, -4px) rotate(2deg) scale(1.08); }
+      38% { transform: translate(-5px, -5px) rotate(-1deg) scale(0.98); filter: hue-rotate(25deg); }
+      52% { transform: translate(6px, 4px) rotate(1deg) scale(1.1); }
+      68% { transform: translate(-3px, 2px) rotate(-1deg) scale(1.03); }
+      100% { transform: translate(0, 0) rotate(0deg) scale(1); filter: saturate(1); }
+    }
+
+    @keyframes shuffleAttract {
+      0%, 64%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); filter: saturate(1); }
+      68% { transform: translate(-4px, 0) rotate(-1deg) scale(1.035); filter: saturate(1.4); }
+      72% { transform: translate(5px, -3px) rotate(1deg) scale(1.055); }
+      76% { transform: translate(-3px, 2px) rotate(-1deg) scale(1.025); }
+      80% { transform: translate(3px, 0) rotate(1deg) scale(1.045); }
+      85% { transform: translate(0, 0) rotate(0deg) scale(1); filter: saturate(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .shuffle-bay.is-shuffling,
+      .shuffle-launch:not(:disabled),
+      .machine .generator-aura,
+      .machine .orbit-track,
+      .machine .ring,
+      .machine .orb,
+      .machine .orb::before,
+      .machine .orb::after,
+      .machine .particle,
+      .machine.is-summoning,
+      .machine .portal-callout,
+      .order-panel.is-receiving,
+      .order-panel.is-receiving::before,
+      .queue-dialog[open],
+      .queue-dialog[open]::backdrop,
+      .queue-dialog[open] .queue-dialog-titlebar,
+      .order-panel.is-revealing .receipt-scan,
+      .order-panel.is-revealing .receipt-row,
+      .order-panel.is-revealing .receipt-row::before,
+      .order-panel.is-revealing .order-name-text,
+      .order-panel.is-revealing .up-first-badge {
+        animation: none;
+      }
+    }
+
+    @keyframes generatorCore {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); filter: hue-rotate(0deg); }
+      50% { transform: translate(-50%, -50%) scale(1.1); filter: hue-rotate(18deg) brightness(1.16); }
+    }
+
+    @keyframes auraPulse {
+      0%, 100% { transform: scale(0.82); opacity: 0.38; }
+      50% { transform: scale(1.12); opacity: 0.86; }
+    }
+
+    @keyframes coreFlicker {
+      0%, 100% { opacity: 0.45; transform: scale(0.78); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
+    @keyframes coreHalo {
+      0%, 100% { transform: scale(0.94); opacity: 0.38; }
+      50% { transform: scale(1.12); opacity: 0.92; }
+    }
+
+    @keyframes ringSpin {
+      from { transform: translate(-50%, -50%) rotate(-11deg); }
+      to { transform: translate(-50%, -50%) rotate(349deg); }
+    }
+
+    @keyframes ringSpinReverse {
+      from { transform: translate(-50%, -50%) rotate(72deg); }
+      to { transform: translate(-50%, -50%) rotate(-288deg); }
+    }
+
+    @keyframes orbitSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes portalSummon {
+      0%, 100% { filter: brightness(1) saturate(1); }
+      18% { filter: brightness(1.65) saturate(1.7) hue-rotate(12deg); }
+      44% { filter: brightness(0.82) saturate(2.1) hue-rotate(-14deg); }
+      72% { filter: brightness(1.45) saturate(1.6); }
+    }
+
+    @keyframes portalCallout {
+      0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
+      18%, 74% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+    }
+
+    @keyframes queueReceive {
+      0%, 100% { filter: brightness(1) saturate(1); box-shadow: none; }
+      35% { filter: brightness(1.35) saturate(1.55); box-shadow: 0 0 0 3px #d9f2cb, 0 0 26px rgba(112, 227, 125, 0.95); }
+    }
+
+    @keyframes queueBeam {
+      0% { left: -62%; opacity: 0; }
+      14% { opacity: 0.9; }
+      72% { left: 108%; opacity: 0.72; }
+      100% { left: 122%; opacity: 0; }
+    }
+
+    @keyframes queueDialogBurst {
+      0% { opacity: 0; transform: translateY(24px) scale(0.18) rotate(-2deg); filter: brightness(3) saturate(2.4); box-shadow: none; }
+      16% { opacity: 1; transform: translateY(12px) scale(0.55) rotate(2deg); filter: brightness(2.2) saturate(2.1); box-shadow: 0 0 0 18px rgba(112, 227, 125, 0.78), 0 0 34px rgba(112, 227, 125, 0.98); }
+      38% { transform: translateY(-8px) scale(1.09) rotate(-1deg); filter: brightness(1.8) saturate(1.9); box-shadow: 0 0 0 5px #d9f2cb, 0 0 0 18px rgba(255, 227, 109, 0.68), 0 0 48px rgba(112, 227, 125, 0.98); }
+      60% { transform: translateY(4px) scale(0.98) rotate(1deg); filter: brightness(1.35) saturate(1.5); box-shadow: 0 0 24px rgba(112, 227, 125, 0.88); }
+      78% { transform: translateY(-1px) scale(1.025) rotate(0deg); filter: brightness(1.12) saturate(1.2); box-shadow: 0 0 12px rgba(217, 242, 203, 0.72); }
+      100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); filter: brightness(1) saturate(1); box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.7); }
+    }
+
+    @keyframes queueBackdropBurst {
+      0%, 100% { background-color: rgba(1, 18, 9, 0.74); }
+      18% { background-color: rgba(112, 227, 125, 0.34); }
+      42% { background-color: rgba(255, 227, 109, 0.18); }
+    }
+
+    @keyframes queueTitleZap {
+      0% { transform: translateX(-8px); filter: brightness(2.5) saturate(2); }
+      24% { transform: translateX(6px); filter: brightness(1.85) saturate(1.7); }
+      52% { transform: translateX(-3px); filter: brightness(1.3); }
+      100% { transform: translateX(0); filter: brightness(1); }
+    }
+
+    @keyframes receiptScan {
+      0% { left: -8px; opacity: 0; }
+      12% { opacity: 1; }
+      84% { left: calc(100% - 5px); opacity: 0.9; }
+      100% { left: calc(100% + 8px); opacity: 0; }
+    }
+
+    @keyframes receiptRowReveal {
+      0% { opacity: 0; transform: translateX(-18px) scale(0.94); filter: brightness(1.55); }
+      62% { opacity: 1; transform: translateX(4px) scale(1.02); filter: brightness(1.16); }
+      100% { opacity: 1; transform: translateX(0) scale(1); filter: brightness(1); }
+    }
+
+    @keyframes receiptTilePop {
+      0% { opacity: 0; transform: scale(0.3); filter: brightness(1.7); }
+      68% { opacity: 1; transform: scale(1.16); filter: brightness(1.3); }
+      100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+    }
+
+    @keyframes receiptNameSnap {
+      0% { opacity: 0; transform: translateX(-10px); }
+      70% { opacity: 1; transform: translateX(3px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes upFirstStamp {
+      0% { opacity: 0; transform: rotate(-8deg) scale(0.45); }
+      68% { opacity: 1; transform: rotate(2deg) scale(1.12); }
+      100% { opacity: 1; transform: rotate(0deg) scale(1); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 1; }
+    }
+
+    @media (max-width: 820px) {
+      body {
+        padding: 6px;
+      }
+
+      .window {
+        min-height: calc(100vh - 12px);
+      }
+
+      .workspace,
+      .app-main,
+      .randomizer,
+      .dispute-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .console-panel,
+      .order-panel,
+      .class-panel,
+      .attendance-panel,
+      .dispute-panel {
+        grid-column: 1;
+        grid-row: auto;
+      }
+
+      .status-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .stat:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .current-name {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .current-footer,
+      .statusbar {
+        grid-template-columns: 1fr;
+      }
+
+      .titlebar {
+        align-items: flex-start;
+      }
+
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        min-height: 140px;
+      }
+
+      .current-name {
+        font-size: 24px;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .rotation-grid,
+      .setup-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .order-wrap {
+        min-height: 216px;
+        height: auto;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .rotation-deck > .panel-title,
+      .setup-today > .panel-title {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .quick-add-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-add-controls button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="window" aria-label="Student Shuffle">
+      <header class="titlebar">
+        <div class="title">
+          <span class="title-icon" aria-hidden="true">R</span>
+          <span>Student Shuffle</span>
+        </div>
+        <div class="window-buttons" aria-hidden="true">
+          <span class="fake-button"></span>
+          <span class="fake-button"></span>
+          <span class="fake-button"></span>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <section class="panel rotation-deck">
+          <div class="panel-title">
+            <span>Rotation Deck</span>
+            <span class="panel-title-detail">SHUFFLE</span>
+          </div>
+
+          <div class="rotation-grid">
+            <section class="rotation-card console-panel">
+              <div class="randomizer">
+                <div class="machine" aria-hidden="true">
+                  <span class="particle p1"></span>
+                  <span class="particle p2"></span>
+                  <span class="particle p3"></span>
+                  <span class="particle p4"></span>
+                  <div class="generator-aura"></div>
+                  <div class="orbit-track"></div>
+                  <div class="ring"></div>
+                  <div class="ring ring-two"></div>
+                  <div class="orb"></div>
+                  <div class="portal-callout">SUMMON ROTATION</div>
+                  <div id="machineStatus" class="screen-label">SUMMON ROTATION</div>
+                </div>
+
+                <div id="shuffleLauncher" class="current shuffle-bay">
+                  <button id="shuffleStudents" type="button" class="primary shuffle-launch" aria-describedby="shuffleHelp">
+                    <span id="shuffleLabel" class="shuffle-word">Shuffle</span>
+                    <span class="shuffle-hint">Make the line</span>
+                  </button>
+                  <div id="currentName" class="screen-reader-only" role="status">No order yet</div>
+                  <span id="shuffleHelp" class="screen-reader-only">Randomize the students marked in for today.</span>
+                </div>
+              </div>
+
+            </section>
+          </div>
+        </section>
+
+        <section class="panel setup-today">
+          <div class="panel-title">
+            <span>Set Up Today</span>
+            <span class="panel-title-detail">CLASS · ATTENDANCE</span>
+          </div>
+
+          <div class="setup-grid">
+            <section class="setup-card class-panel">
+              <div class="subpanel-title">1. Choose a class</div>
+              <label for="classSelect">Class</label>
+              <select id="classSelect"></select>
+              <div class="class-actions">
+                <button id="newClass" type="button" class="primary">New class</button>
+                <button id="editClass" type="button" class="secondary">Edit class</button>
+              </div>
+              <div id="classRosterState" class="preset-state" role="status">Choose a class roster.</div>
+              <form id="quickAddForm" class="quick-add">
+                <label for="studentName">Add a student</label>
+                <div class="quick-add-controls">
+                  <input id="studentName" autocomplete="off" placeholder="Student name">
+                  <button id="addStudent" type="submit" class="primary">Add</button>
+                </div>
+              </form>
+            </section>
+
+            <section class="setup-card attendance-panel">
+              <div class="subpanel-title">2. Mark attendance</div>
+              <div id="attendanceList" class="attendance-list" aria-live="polite"></div>
+              <div id="attendanceState" class="attendance-state">Everyone is in.</div>
+            </section>
+          </div>
+        </section>
+      </div>
+
+      <footer class="statusbar">
+        <div id="statusMessage" class="status-cell">Ready.</div>
+        <div id="savedMessage" class="status-cell">Local roster memory: on</div>
+        <button id="soundToggle" type="button" class="sound-toggle" aria-pressed="true" title="Mute sound">
+          <span class="icon" aria-hidden="true">S</span>
+          <span id="soundLabel">Sound on</span>
+        </button>
+      </footer>
+    </section>
+  </main>
+
+  <dialog id="queueDialog" class="queue-dialog" aria-labelledby="queueDialogTitle" aria-describedby="queueDialogHelp">
+    <section class="order-panel">
+      <div class="queue-dialog-titlebar">
+        <h2 id="queueDialogTitle" class="queue-dialog-title" tabindex="-1">Shuffled Order</h2>
+        <button id="closeQueue" type="button" class="queue-close" aria-label="Close shuffled order" title="Close shuffled order">×</button>
+      </div>
+      <div class="order-lock-strip">
+        <span>ORDER LOCKED</span>
+        <span class="order-lock-detail">READY TO RUN</span>
+      </div>
+      <p id="queueDialogHelp" class="screen-reader-only">Your generated shuffled order.</p>
+      <div class="order-wrap">
+        <span class="receipt-scan" aria-hidden="true"></span>
+        <ol id="orderList" class="order-list"></ol>
+        <div id="emptyState" class="empty">Load or add students, then press Shuffle.</div>
+      </div>
+    </section>
+  </dialog>
+
+  <dialog id="newClassDialog" class="class-dialog" aria-labelledby="newClassDialogTitle">
+    <section class="class-dialog-panel">
+      <div class="queue-dialog-titlebar">
+        <h2 id="newClassDialogTitle" class="queue-dialog-title">New Class</h2>
+        <button id="closeNewClass" type="button" class="dialog-close" aria-label="Close new class" title="Close new class">×</button>
+      </div>
+      <form id="newClassForm" class="class-dialog-body">
+        <label for="newClassName">Class name</label>
+        <input id="newClassName" autocomplete="off" maxlength="60" placeholder="Example: Tuesday 5 PM" required>
+        <p id="newClassState" class="class-editor-note">Create the class, then add its students.</p>
+        <div class="class-dialog-actions">
+          <button id="cancelNewClass" type="button" class="secondary">Cancel</button>
+          <button type="submit" class="primary">Create class</button>
+        </div>
+      </form>
+    </section>
+  </dialog>
+
+  <dialog id="classEditorDialog" class="class-dialog" aria-labelledby="classEditorDialogTitle" aria-describedby="classEditorNote">
+    <section class="class-dialog-panel">
+      <div class="queue-dialog-titlebar">
+        <h2 id="classEditorDialogTitle" class="queue-dialog-title">Edit Class</h2>
+        <button id="closeClassEditor" type="button" class="dialog-close" aria-label="Close class editor" title="Close class editor">×</button>
+      </div>
+      <div class="class-dialog-body">
+        <p id="editingClassName" class="editing-class-name"></p>
+        <label for="rosterText">Students</label>
+        <textarea id="rosterText" spellcheck="false" placeholder="One student per line"></textarea>
+        <p id="classEditorNote" class="class-editor-note" role="status">Changes save automatically.</p>
+      </div>
+    </section>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "student-random-order-roster-v1";
+    const CLASS_STORAGE_KEY = "student-random-order-classes-v1";
+    const SELECTED_CLASS_KEY = "student-random-order-selected-class-v1";
+    const HIDDEN_STORAGE_KEY = "student-random-order-hidden-students-v1";
+    const SOUND_STORAGE_KEY = "student-random-order-sound-v1";
+    const BUILT_IN_CLASSES = [
+      {
+        key: "builtin:level-3-boys",
+        name: "boys level 3",
+        names: ["Fabian Fernandes", "Ethan Grinberg", "Weston Schomaker", "Daniel Shatil", "Ariel Shatil"]
+      },
+      {
+        key: "builtin:boys-nga",
+        name: "boys nga",
+        names: ["Benjamin Bowie Christopher", "Kenneth Chan", "Maxon Edington", "Cody Goodman", "Zayd Lakhani", "Adam Pagsolingan", "Ryan Pagsolingan", "Oliver Rodriguez"]
+      },
+      {
+        key: "builtin:boys-level-4",
+        name: "boys level 4",
+        names: ["Maksim Bychkov", "Jace Jackson", "Aarush Kini", "Owen Lavrich", "Kaleb Jax Muolic", "Uladzislau Samoilenka"]
+      },
+      {
+        key: "builtin:advanced-boys",
+        name: "boys advanced",
+        names: ["Ildar Bekov", "Dominic Chan"]
+      }
+    ];
+
+    const rosterText = document.getElementById("rosterText");
+    const studentName = document.getElementById("studentName");
+    const addStudent = document.getElementById("addStudent");
+    const quickAddForm = document.getElementById("quickAddForm");
+    const newClassButton = document.getElementById("newClass");
+    const editClassButton = document.getElementById("editClass");
+    const newClassDialog = document.getElementById("newClassDialog");
+    const newClassForm = document.getElementById("newClassForm");
+    const newClassName = document.getElementById("newClassName");
+    const newClassState = document.getElementById("newClassState");
+    const closeNewClass = document.getElementById("closeNewClass");
+    const cancelNewClass = document.getElementById("cancelNewClass");
+    const classEditorDialog = document.getElementById("classEditorDialog");
+    const closeClassEditor = document.getElementById("closeClassEditor");
+    const editingClassName = document.getElementById("editingClassName");
+    const classEditorNote = document.getElementById("classEditorNote");
+    const shuffleStudents = document.getElementById("shuffleStudents");
+    const shuffleLauncher = document.getElementById("shuffleLauncher");
+    const orderList = document.getElementById("orderList");
+    const emptyState = document.getElementById("emptyState");
+    const currentName = document.getElementById("currentName");
+    const queueDialog = document.getElementById("queueDialog");
+    const queuePanel = queueDialog.querySelector(".order-panel");
+    const queueDialogTitle = document.getElementById("queueDialogTitle");
+    const closeQueue = document.getElementById("closeQueue");
+    const machine = document.querySelector(".machine");
+    const machineStatus = document.getElementById("machineStatus");
+    const statusMessage = document.getElementById("statusMessage");
+    const savedMessage = document.getElementById("savedMessage");
+    const soundToggle = document.getElementById("soundToggle");
+    const soundLabel = document.getElementById("soundLabel");
+    const attendanceList = document.getElementById("attendanceList");
+    const attendanceState = document.getElementById("attendanceState");
+    const classSelect = document.getElementById("classSelect");
+    const classRosterState = document.getElementById("classRosterState");
+
+    const SUMMON_DURATION_MS = 1350;
+    let order = [];
+    let hiddenStudents = new Set();
+    let audioContext = null;
+    let soundEnabled = true;
+    let isSummoning = false;
+    let queueRevealTimer = null;
+    let queueInvoker = null;
+    let receiptSoundTimers = [];
+    let newClassInvoker = null;
+    let classEditorInvoker = null;
+    let classEditorDirty = false;
+
+    function loadSoundPreference() {
+      try {
+        soundEnabled = localStorage.getItem(SOUND_STORAGE_KEY) !== "off";
+      } catch (error) {
+        soundEnabled = true;
+      }
+      renderSoundToggle();
+    }
+
+    function saveSoundPreference() {
+      try {
+        localStorage.setItem(SOUND_STORAGE_KEY, soundEnabled ? "on" : "off");
+      } catch (error) {
+        savedMessage.textContent = "Sound setting not saved";
+      }
+    }
+
+    function renderSoundToggle() {
+      soundToggle.classList.toggle("is-muted", !soundEnabled);
+      soundToggle.setAttribute("aria-pressed", soundEnabled ? "true" : "false");
+      soundToggle.title = soundEnabled ? "Mute sound" : "Unmute sound";
+      soundLabel.textContent = soundEnabled ? "Sound on" : "Sound off";
+    }
+
+    function getAudioContext() {
+      if (!soundEnabled) return null;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      if (!audioContext) audioContext = new AudioContextClass();
+      if (audioContext.state === "suspended") audioContext.resume();
+      return audioContext;
+    }
+
+    function playTone(frequency, delay, duration, type, volume, slideTo) {
+      const context = getAudioContext();
+      if (!context) return;
+
+      const start = context.currentTime + delay;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, start);
+      if (slideTo) {
+        oscillator.frequency.exponentialRampToValueAtTime(slideTo, start + duration);
+      }
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.03);
+    }
+
+    function playNoise(delay, duration, volume, frequency) {
+      const context = getAudioContext();
+      if (!context) return;
+
+      const length = Math.max(1, Math.floor(context.sampleRate * duration));
+      const buffer = context.createBuffer(1, length, context.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / length);
+      }
+
+      const start = context.currentTime + delay;
+      const source = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      source.buffer = buffer;
+      filter.type = "bandpass";
+      filter.frequency.setValueAtTime(frequency, start);
+      filter.Q.setValueAtTime(3, start);
+      gain.gain.setValueAtTime(volume, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(context.destination);
+      source.start(start);
+      source.stop(start + duration + 0.02);
+    }
+
+    function playSound(name) {
+      if (name === "shuffle") {
+        for (let i = 0; i < 10; i += 1) {
+          playTone(300 + i * 38, i * 0.025, 0.06, "square", 0.035, 410 + i * 54);
+          playNoise(i * 0.025, 0.045, 0.028, 900 + i * 130);
+        }
+        playTone(740, 0.28, 0.09, "triangle", 0.055, 1040);
+        playTone(980, 0.36, 0.11, "triangle", 0.045, 1320);
+        return;
+      }
+
+      if (name === "reveal") {
+        // A compact win-screen chime: warm pop, then a satisfying major chord.
+        playTone(130.81, 0, 0.15, "triangle", 0.065, 196);
+        playTone(261.63, 0.025, 0.1, "triangle", 0.045, 392);
+        [523.25, 659.25, 783.99].forEach((frequency, index) => {
+          playTone(frequency, 0.115 + index * 0.015, 0.15, "triangle", 0.042, frequency * 1.2);
+        });
+        playTone(1046.5, 0.2, 0.16, "sine", 0.036, 1318.51);
+        return;
+      }
+
+      if (name === "dispute") {
+        [420, 520, 660, 840].forEach((frequency, index) => {
+          playTone(frequency, index * 0.045, 0.05, "square", 0.035, frequency * 1.12);
+        });
+        playNoise(0.2, 0.07, 0.025, 1400);
+        playTone(1180, 0.25, 0.14, "triangle", 0.06, 1560);
+        return;
+      }
+
+      if (name === "save" || name === "add" || name === "load") {
+        playTone(520, 0, 0.06, "triangle", 0.045, 650);
+        playTone(name === "load" ? 780 : 880, 0.07, 0.09, "triangle", 0.05, 1040);
+        return;
+      }
+
+      if (name === "attendanceIn") {
+        playTone(620, 0, 0.06, "triangle", 0.045, 840);
+        playTone(920, 0.06, 0.07, "triangle", 0.04, 1180);
+        return;
+      }
+
+      if (name === "attendanceOut") {
+        playTone(520, 0, 0.06, "square", 0.035, 360);
+        playTone(320, 0.06, 0.08, "square", 0.028, 240);
+        return;
+      }
+
+      if (name === "reset" || name === "clear" || name === "delete") {
+        playNoise(0, 0.07, name === "delete" ? 0.05 : 0.03, 520);
+        playTone(360, 0.02, 0.08, "sawtooth", 0.035, 240);
+        playTone(220, 0.1, 0.09, "sawtooth", 0.028, 160);
+        return;
+      }
+
+      if (name === "sort" || name === "mode") {
+        [420, 540, 700].forEach((frequency, index) => {
+          playTone(frequency, index * 0.055, 0.055, "square", 0.034, frequency * 1.08);
+        });
+        return;
+      }
+
+      if (name === "error") {
+        playTone(170, 0, 0.11, "sawtooth", 0.04, 130);
+        playTone(135, 0.12, 0.12, "sawtooth", 0.035, 110);
+        return;
+      }
+
+      if (name === "toggleOff") {
+        playTone(440, 0, 0.06, "triangle", 0.035, 300);
+        playTone(260, 0.06, 0.08, "triangle", 0.028, 200);
+        return;
+      }
+
+      if (name === "toggleOn") {
+        playTone(420, 0, 0.06, "triangle", 0.04, 560);
+        playTone(720, 0.06, 0.09, "triangle", 0.05, 980);
+      }
+    }
+
+    function clearReceiptPrintSounds() {
+      receiptSoundTimers.forEach((timer) => window.clearTimeout(timer));
+      receiptSoundTimers = [];
+    }
+
+    function playReceiptPrintSounds() {
+      clearReceiptPrintSounds();
+      if (!soundEnabled || prefersReducedMotion()) return;
+
+      const notes = [440, 494, 554, 494];
+      const printedNames = Math.min(order.length, 13);
+      for (let index = 0; index < printedNames; index += 1) {
+        const timer = window.setTimeout(() => {
+          const frequency = notes[index % notes.length];
+          if (index === 0) {
+            playTone(196, 0, 0.09, "triangle", 0.03, 261.63);
+          }
+          playTone(frequency, 0, 0.05, "square", 0.026, frequency * 1.12);
+        }, 1080 + index * 135);
+        receiptSoundTimers.push(timer);
+      }
+    }
+
+    function studentKey(name) {
+      return name.trim().toLowerCase();
+    }
+
+    function normalizeRosterNames(names) {
+      const seen = new Set();
+      return (Array.isArray(names) ? names : [])
+        .map((name) => typeof name === "string" ? name.trim() : "")
+        .filter(Boolean)
+        .filter((name) => {
+          const key = name.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+    }
+
+    function getRoster() {
+      return normalizeRosterNames(rosterText.value.split(/\r?\n/));
+    }
+
+    function setRoster(names) {
+      rosterText.value = normalizeRosterNames(names).join("\n");
+      pruneHiddenStudents();
+      renderAttendance();
+      updateStats();
+      saveToStorage();
+    }
+
+    function getPresentRoster() {
+      return getRoster().filter((name) => !hiddenStudents.has(studentKey(name)));
+    }
+
+    function loadHiddenStudents() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(HIDDEN_STORAGE_KEY) || "[]");
+        hiddenStudents = new Set(Array.isArray(saved) ? saved.map(studentKey) : []);
+      } catch (error) {
+        hiddenStudents = new Set();
+      }
+      pruneHiddenStudents();
+    }
+
+    function saveHiddenStudents() {
+      try {
+        localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(Array.from(hiddenStudents)));
+      } catch (error) {
+        savedMessage.textContent = "Local roster memory unavailable";
+      }
+    }
+
+    function pruneHiddenStudents() {
+      const rosterKeys = new Set(getRoster().map(studentKey));
+      hiddenStudents = new Set(Array.from(hiddenStudents).filter((key) => rosterKeys.has(key)));
+      saveHiddenStudents();
+    }
+
+    function renderAttendance() {
+      const roster = getRoster();
+      const present = getPresentRoster();
+      attendanceList.innerHTML = "";
+
+      if (!roster.length) {
+        const empty = document.createElement("span");
+        empty.className = "attendance-chip is-out";
+        empty.textContent = "No roster yet";
+        attendanceList.appendChild(empty);
+        attendanceState.textContent = "Add students below.";
+        return;
+      }
+
+      roster.forEach((name) => {
+        const key = studentKey(name);
+        const isOut = hiddenStudents.has(key);
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "attendance-chip" + (isOut ? " is-out" : "");
+        chip.setAttribute("aria-pressed", isOut ? "true" : "false");
+        chip.title = isOut ? "Show " + name + " for today" : "Hide " + name + " for today";
+
+        const mark = document.createElement("span");
+        mark.className = "mark";
+        mark.textContent = isOut ? "x" : "+";
+        chip.appendChild(mark);
+        chip.appendChild(document.createTextNode(name));
+        chip.addEventListener("click", () => {
+          if (hiddenStudents.has(key)) {
+            hiddenStudents.delete(key);
+            setStatus(name + " is in today.");
+            playSound("attendanceIn");
+          } else {
+            hiddenStudents.add(key);
+            setStatus(name + " hidden for today.");
+            playSound("attendanceOut");
+          }
+          order = [];
+          saveHiddenStudents();
+          renderAttendance();
+          renderOrder();
+        });
+        attendanceList.appendChild(chip);
+      });
+
+      attendanceState.textContent = present.length + " in today / " + roster.length + " on roster";
+    }
+
+    function emptyClassData() {
+      return { version: 2, custom: {}, builtinOverrides: {} };
+    }
+
+    function normalizeClassMap(classes) {
+      const normalized = {};
+      if (!classes || typeof classes !== "object" || Array.isArray(classes)) return normalized;
+
+      Object.entries(classes).forEach(([name, names]) => {
+        const cleanName = name.trim().replace(/\s+/g, " ");
+        if (!cleanName || !Array.isArray(names)) return;
+        normalized[cleanName] = normalizeRosterNames(names);
+      });
+      return normalized;
+    }
+
+    function normalizeBuiltinOverrides(overrides) {
+      const normalized = {};
+      if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) return normalized;
+
+      BUILT_IN_CLASSES.forEach((item) => {
+        if (Array.isArray(overrides[item.key])) {
+          normalized[item.key] = normalizeRosterNames(overrides[item.key]);
+        }
+      });
+      return normalized;
+    }
+
+    function loadClassData() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(CLASS_STORAGE_KEY) || "null");
+        if (!saved || typeof saved !== "object" || Array.isArray(saved)) return emptyClassData();
+
+        if (Object.prototype.hasOwnProperty.call(saved, "custom") || Object.prototype.hasOwnProperty.call(saved, "builtinOverrides")) {
+          return {
+            version: 2,
+            custom: normalizeClassMap(saved.custom),
+            builtinOverrides: normalizeBuiltinOverrides(saved.builtinOverrides)
+          };
+        }
+
+        // Older versions stored custom classes as a simple name-to-roster map.
+        return { version: 2, custom: normalizeClassMap(saved), builtinOverrides: {} };
+      } catch (error) {
+        return emptyClassData();
+      }
+    }
+
+    function saveClassData(data) {
+      const normalized = {
+        version: 2,
+        custom: normalizeClassMap(data.custom),
+        builtinOverrides: normalizeBuiltinOverrides(data.builtinOverrides)
+      };
+      try {
+        localStorage.setItem(CLASS_STORAGE_KEY, JSON.stringify(normalized));
+        savedMessage.textContent = "Class changes saved locally";
+        return true;
+      } catch (error) {
+        savedMessage.textContent = "Local roster memory unavailable";
+        return false;
+      }
+    }
+
+    function loadSelectedClassKey() {
+      try {
+        const saved = localStorage.getItem(SELECTED_CLASS_KEY);
+        return typeof saved === "string" ? saved : "";
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function saveSelectedClassKey(key) {
+      try {
+        localStorage.setItem(SELECTED_CLASS_KEY, key);
+      } catch (error) {
+        savedMessage.textContent = "Local roster memory unavailable";
+      }
+    }
+
+    function getClassRoster(key) {
+      if (!key) return null;
+      const classData = loadClassData();
+
+      if (key.startsWith("builtin:")) {
+        const item = BUILT_IN_CLASSES.find((entry) => entry.key === key);
+        if (!item) return null;
+        const names = Array.isArray(classData.builtinOverrides[key]) ? classData.builtinOverrides[key] : item.names;
+        return { key, name: item.name, names: normalizeRosterNames(names), custom: false };
+      }
+
+      if (!key.startsWith("custom:")) return null;
+      const className = key.slice("custom:".length);
+      const saved = classData.custom[className];
+      if (!Array.isArray(saved)) return null;
+      return { key, name: className, names: normalizeRosterNames(saved), custom: true };
+    }
+
+    function renderClassSelect(preferredKey) {
+      const current = preferredKey || classSelect.value || BUILT_IN_CLASSES[0].key;
+      const classes = loadClassData().custom;
+      classSelect.innerHTML = "";
+
+      BUILT_IN_CLASSES.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.key;
+        option.textContent = item.name;
+        classSelect.appendChild(option);
+      });
+
+      Object.keys(classes).sort((a, b) => a.localeCompare(b)).forEach((name) => {
+        const option = document.createElement("option");
+        option.value = "custom:" + name;
+        option.textContent = name;
+        classSelect.appendChild(option);
+      });
+
+      classSelect.value = current;
+      if (classSelect.value !== current) classSelect.value = BUILT_IN_CLASSES[0].key;
+      renderClassPreview();
+    }
+
+    function renderClassPreview() {
+      const selected = getClassRoster(classSelect.value);
+      if (!selected) {
+        classRosterState.textContent = "Choose a class roster.";
+        return;
+      }
+
+      const count = selected.names.length;
+      classRosterState.textContent = selected.name + " · " + count + " " + (count === 1 ? "student" : "students");
+    }
+
+    function resetOrderState() {
+      order = [];
+      renderOrder();
+    }
+
+    function saveActiveClassRoster(names, { syncTextarea = false } = {}) {
+      const selected = getClassRoster(classSelect.value);
+      if (!selected) return [];
+
+      const normalized = normalizeRosterNames(names);
+      const classData = loadClassData();
+      if (selected.custom) {
+        classData.custom[selected.name] = normalized;
+      } else {
+        classData.builtinOverrides[selected.key] = normalized;
+      }
+      saveClassData(classData);
+
+      if (syncTextarea) rosterText.value = normalized.join("\n");
+      pruneHiddenStudents();
+      renderClassPreview();
+      renderAttendance();
+      saveToStorage(normalized.join("\n"));
+      resetOrderState();
+      return normalized;
+    }
+
+    function loadSelectedClass({ announce = true, resetAttendance = true } = {}) {
+      const selected = getClassRoster(classSelect.value);
+      if (!selected) {
+        setStatus("Choose a class first.");
+        if (announce) playSound("error");
+        return;
+      }
+
+      if (resetAttendance) {
+        hiddenStudents = new Set();
+        saveHiddenStudents();
+      }
+      setRoster(selected.names);
+      renderClassPreview();
+      resetOrderState();
+      saveSelectedClassKey(selected.key);
+      if (announce) {
+        setStatus(selected.name + " loaded.");
+        playSound("load");
+      }
+    }
+
+    function saveToStorage(value = rosterText.value) {
+      try {
+        localStorage.setItem(STORAGE_KEY, value);
+        if (!classEditorDialog.open) savedMessage.textContent = "Roster saved locally";
+      } catch (error) {
+        savedMessage.textContent = "Local roster memory unavailable";
+      }
+    }
+
+    function setStatus(message) {
+      statusMessage.textContent = message;
+      machineStatus.textContent = message.toUpperCase();
+    }
+
+    function prefersReducedMotion() {
+      return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    }
+
+    function updateStats() {
+      const roster = getPresentRoster();
+      shuffleLauncher.classList.toggle("is-generating", isSummoning);
+      shuffleStudents.disabled = isSummoning || roster.length < 2;
+    }
+
+    function renderOrder() {
+      queuePanel.classList.remove("is-revealing");
+      orderList.innerHTML = "";
+      emptyState.style.display = order.length ? "none" : "grid";
+
+      order.forEach((name, index) => {
+        const item = document.createElement("li");
+        item.className = "receipt-row";
+        item.style.setProperty("--reveal-delay", Math.min(index, 12) * 135 + "ms");
+        if (index === 0) item.classList.add("is-first");
+
+        const label = document.createElement("span");
+        label.className = "order-name";
+
+        const text = document.createElement("span");
+        text.className = "order-name-text";
+        text.textContent = name;
+        label.appendChild(text);
+
+        if (index === 0) {
+          const badge = document.createElement("span");
+          badge.className = "up-first-badge";
+          badge.textContent = "UP FIRST";
+          label.appendChild(badge);
+        }
+
+        item.appendChild(label);
+        orderList.appendChild(item);
+      });
+
+      if (order.length) {
+        currentName.textContent = "Order ready";
+      } else {
+        currentName.textContent = "No order yet";
+      }
+
+      updateStats();
+    }
+
+    function openQueueDialog() {
+      if (queueRevealTimer !== null) {
+        window.clearTimeout(queueRevealTimer);
+        queueRevealTimer = null;
+      }
+
+      isSummoning = false;
+      updateStats();
+
+      if (!queueDialog.open) {
+        queueDialog.showModal();
+      }
+
+      playSound("reveal");
+      playReceiptPrintSounds();
+      queuePanel.classList.remove("is-receiving", "is-revealing");
+      void queuePanel.offsetWidth;
+      queuePanel.classList.add("is-receiving", "is-revealing");
+      queueDialogTitle.focus();
+    }
+
+    function scheduleQueueDialog() {
+      if (queueRevealTimer !== null) {
+        window.clearTimeout(queueRevealTimer);
+        queueRevealTimer = null;
+      }
+
+      if (prefersReducedMotion()) {
+        openQueueDialog();
+        return;
+      }
+
+      queueRevealTimer = window.setTimeout(openQueueDialog, SUMMON_DURATION_MS);
+    }
+
+    function triggerShuffleAnimation() {
+      if (prefersReducedMotion()) {
+        return;
+      }
+      shuffleLauncher.classList.remove("is-shuffling");
+      void shuffleLauncher.offsetWidth;
+      shuffleLauncher.classList.add("is-shuffling");
+    }
+
+    function triggerPortalAnimation() {
+      if (prefersReducedMotion()) {
+        return;
+      }
+      machine.classList.remove("is-summoning");
+      void machine.offsetWidth;
+      machine.classList.add("is-summoning");
+    }
+
+    function shuffle(names) {
+      const mixed = names.slice();
+      for (let i = mixed.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [mixed[i], mixed[j]] = [mixed[j], mixed[i]];
+      }
+      return mixed;
+    }
+
+    function normalizeClassName(value) {
+      return value.trim().replace(/\s+/g, " ");
+    }
+
+    function classNameExists(name, classData) {
+      const comparison = name.toLocaleLowerCase();
+      return BUILT_IN_CLASSES.some((item) => item.name.toLocaleLowerCase() === comparison) ||
+        Object.keys(classData.custom).some((className) => className.toLocaleLowerCase() === comparison);
+    }
+
+    function openNewClass() {
+      newClassInvoker = document.activeElement instanceof HTMLElement ? document.activeElement : newClassButton;
+      newClassForm.reset();
+      newClassState.textContent = "Create the class, then add its students.";
+      if (!newClassDialog.open) newClassDialog.showModal();
+      window.requestAnimationFrame(() => newClassName.focus());
+    }
+
+    function openClassEditor() {
+      const selected = getClassRoster(classSelect.value);
+      if (!selected) {
+        setStatus("Choose a class first.");
+        playSound("error");
+        return;
+      }
+
+      classEditorInvoker = document.activeElement instanceof HTMLElement ? document.activeElement : editClassButton;
+      editingClassName.textContent = selected.name;
+      rosterText.value = selected.names.join("\n");
+      classEditorNote.textContent = "Changes save automatically.";
+      classEditorDirty = false;
+      if (!classEditorDialog.open) classEditorDialog.showModal();
+      window.requestAnimationFrame(() => rosterText.focus());
+    }
+
+    function closeWhenClickingBackdrop(dialog) {
+      dialog.addEventListener("click", (event) => {
+        if (event.target !== dialog) return;
+        const bounds = dialog.getBoundingClientRect();
+        const outsideDialog = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
+        if (outsideDialog) dialog.close();
+      });
+    }
+
+    function createNewClass(event) {
+      event.preventDefault();
+      const name = normalizeClassName(newClassName.value);
+      const classData = loadClassData();
+
+      if (!name) {
+        newClassState.textContent = "Give the class a name first.";
+        newClassName.focus();
+        playSound("error");
+        return;
+      }
+
+      if (classNameExists(name, classData)) {
+        newClassState.textContent = "That class already exists.";
+        newClassName.focus();
+        playSound("error");
+        return;
+      }
+
+      classData.custom[name] = [];
+      if (!saveClassData(classData)) return;
+
+      renderClassSelect("custom:" + name);
+      loadSelectedClass({ announce: false });
+      newClassDialog.close();
+      setStatus(name + " created. Add students in Edit Class.");
+      playSound("save");
+      window.setTimeout(openClassEditor, 0);
+    }
+
+    function addCurrentStudent() {
+      const name = studentName.value.trim();
+      if (!name) {
+        setStatus("Type a name first.");
+        playSound("error");
+        return;
+      }
+
+      const roster = getRoster();
+      if (!roster.some((existing) => existing.toLowerCase() === name.toLowerCase())) {
+        roster.push(name);
+        saveActiveClassRoster(roster, { syncTextarea: true });
+        setStatus("Added " + name + ".");
+        playSound("add");
+      } else {
+        setStatus(name + " is already on the roster.");
+        playSound("error");
+      }
+
+      studentName.value = "";
+      studentName.focus();
+    }
+
+    function makeOrder() {
+      const roster = getRoster();
+      const presentRoster = getPresentRoster();
+      if (presentRoster.length < 2) {
+        setStatus("Show at least two students for today.");
+        playSound("error");
+        return;
+      }
+
+      queueInvoker = document.activeElement instanceof HTMLElement ? document.activeElement : shuffleStudents;
+      isSummoning = true;
+      updateStats();
+      setRoster(roster);
+      triggerShuffleAnimation();
+      triggerPortalAnimation();
+      order = shuffle(presentRoster);
+      renderOrder();
+      setStatus("Shuffled order ready.");
+      playSound("shuffle");
+      scheduleQueueDialog();
+    }
+
+    quickAddForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      addCurrentStudent();
+    });
+    newClassButton.addEventListener("click", openNewClass);
+    editClassButton.addEventListener("click", openClassEditor);
+    newClassForm.addEventListener("submit", createNewClass);
+    closeNewClass.addEventListener("click", () => newClassDialog.close());
+    cancelNewClass.addEventListener("click", () => newClassDialog.close());
+    closeClassEditor.addEventListener("click", () => classEditorDialog.close());
+    closeWhenClickingBackdrop(newClassDialog);
+    closeWhenClickingBackdrop(classEditorDialog);
+    newClassDialog.addEventListener("close", () => {
+      const focusTarget = newClassInvoker;
+      newClassInvoker = null;
+      if (focusTarget && document.contains(focusTarget) && !classEditorDialog.open) focusTarget.focus();
+    });
+    classEditorDialog.addEventListener("close", () => {
+      if (classEditorDirty) {
+        saveActiveClassRoster(getRoster(), { syncTextarea: true });
+        classEditorDirty = false;
+      }
+      const focusTarget = classEditorInvoker;
+      classEditorInvoker = null;
+      if (focusTarget && document.contains(focusTarget)) focusTarget.focus();
+    });
+
+    shuffleStudents.addEventListener("click", makeOrder);
+    shuffleLauncher.addEventListener("animationend", (event) => {
+      if (event.target === shuffleLauncher && event.animationName === "shufflePop") {
+        shuffleLauncher.classList.remove("is-shuffling");
+      }
+    });
+    machine.addEventListener("animationend", (event) => {
+      if (event.target === machine && event.animationName === "portalSummon") {
+        machine.classList.remove("is-summoning");
+      }
+    });
+    queuePanel.addEventListener("animationend", (event) => {
+      if (event.target === queuePanel && event.animationName === "queueReceive") {
+        queuePanel.classList.remove("is-receiving");
+      }
+    });
+    closeQueue.addEventListener("click", () => queueDialog.close());
+    queueDialog.addEventListener("click", (event) => {
+      if (event.target !== queueDialog) return;
+      const bounds = queueDialog.getBoundingClientRect();
+      const outsideDialog = event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
+      if (outsideDialog) queueDialog.close();
+    });
+    queueDialog.addEventListener("close", () => {
+      clearReceiptPrintSounds();
+      queuePanel.classList.remove("is-receiving", "is-revealing");
+      const focusTarget = queueInvoker;
+      queueInvoker = null;
+      if (focusTarget && document.contains(focusTarget)) focusTarget.focus();
+    });
+    classSelect.addEventListener("change", loadSelectedClass);
+
+    rosterText.addEventListener("input", () => {
+      classEditorDirty = true;
+      saveActiveClassRoster(getRoster());
+      classEditorNote.textContent = "Saved automatically.";
+    });
+
+    soundToggle.addEventListener("click", () => {
+      if (soundEnabled) {
+        playSound("toggleOff");
+        soundEnabled = false;
+      } else {
+        soundEnabled = true;
+        playSound("toggleOn");
+      }
+      saveSoundPreference();
+      renderSoundToggle();
+    });
+
+    let savedRoster = "";
+    try {
+      savedRoster = localStorage.getItem(STORAGE_KEY) || "";
+    } catch (error) {
+      savedMessage.textContent = "Local roster memory unavailable";
+    }
+    const rememberedClassKey = loadSelectedClassKey();
+    renderClassSelect(rememberedClassKey);
+    const restoredSelectedClass = rememberedClassKey && classSelect.value === rememberedClassKey;
+    const initialClass = getClassRoster(classSelect.value);
+    rosterText.value = !restoredSelectedClass && savedRoster
+      ? savedRoster
+      : (initialClass ? initialClass.names.join("\n") : "");
+
+    loadSoundPreference();
+    loadHiddenStudents();
+    if (!restoredSelectedClass && savedRoster) {
+      saveActiveClassRoster(getRoster(), { syncTextarea: true });
+      savedMessage.textContent = "Loaded and saved your previous roster";
+    } else {
+      saveSelectedClassKey(classSelect.value);
+      renderClassPreview();
+      renderAttendance();
+      updateStats();
+    }
+    renderAttendance();
+    renderOrder();
+    setStatus("Summon rotation");
+  </script>
+</body>
+</html>
