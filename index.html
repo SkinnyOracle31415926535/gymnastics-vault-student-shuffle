@@ -1047,9 +1047,9 @@
     .order-list li {
       counter-increment: students;
       display: grid;
-      grid-template-columns: 30px 1fr;
+      grid-template-columns: 40px 1fr;
       align-items: center;
-      min-height: 28px;
+      min-height: 38px;
       margin-bottom: 5px;
       background:
         linear-gradient(90deg, rgba(255, 227, 109, 0.16), transparent 40%),
@@ -1058,7 +1058,7 @@
       border-left: 2px solid #f8fff3;
       border-right: 2px solid #34563b;
       border-bottom: 2px solid #34563b;
-      font-size: 13px;
+      font-size: clamp(18px, 3.5vw, 28px);
       font-weight: 700;
       box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22);
     }
