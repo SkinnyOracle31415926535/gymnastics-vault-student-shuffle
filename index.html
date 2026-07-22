@@ -503,6 +503,24 @@
       pointer-events: none;
       transform: scale(1.35);
       transform-origin: 50% 42%;
+      animation: visualIdle 7.2s ease-in-out infinite;
+    }
+
+    .machine-visual::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      z-index: 0;
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      pointer-events: none;
+      background:
+        radial-gradient(circle, rgba(239, 255, 234, 0.42) 0 2%, rgba(112, 227, 125, 0.26) 16%, rgba(7, 90, 49, 0.16) 42%, transparent 72%);
+      box-shadow: 0 0 22px rgba(112, 227, 125, 0.46), inset 0 0 26px rgba(217, 242, 203, 0.18);
+      transform: translate(-50%, -50%) scale(0.76);
+      animation: energyFieldBreathe 6.4s ease-in-out infinite;
     }
 
     .machine::before,
@@ -689,6 +707,14 @@
 
     .machine.is-summoning {
       animation: portalSummon 1.35s steps(5, end);
+    }
+
+    .machine.is-summoning .machine-visual {
+      animation: visualSurge 1.35s cubic-bezier(0.15, 0.85, 0.2, 1) both;
+    }
+
+    .machine.is-summoning .machine-visual::before {
+      animation: energyFieldSurge 1.35s ease-out both;
     }
 
     .machine.is-summoning .generator-aura {
@@ -1047,9 +1073,9 @@
     .order-list li {
       counter-increment: students;
       display: grid;
-      grid-template-columns: 40px 1fr;
+      grid-template-columns: 34px 1fr;
       align-items: center;
-      min-height: 38px;
+      min-height: 34px;
       margin-bottom: 5px;
       background:
         linear-gradient(90deg, rgba(255, 227, 109, 0.16), transparent 40%),
@@ -1058,7 +1084,7 @@
       border-left: 2px solid #f8fff3;
       border-right: 2px solid #34563b;
       border-bottom: 2px solid #34563b;
-      font-size: clamp(18px, 3.5vw, 28px);
+      font-size: clamp(16px, 2.8vw, 22px);
       font-weight: 700;
       box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22);
     }
@@ -1693,6 +1719,8 @@
       .machine .orb::before,
       .machine .orb::after,
       .machine .particle,
+      .machine .machine-visual,
+      .machine .machine-visual::before,
       .machine.is-summoning,
       .machine .portal-callout,
       .order-panel.is-receiving,
@@ -1727,6 +1755,36 @@
     @keyframes coreHalo {
       0%, 100% { transform: scale(0.94); opacity: 0.38; }
       50% { transform: scale(1.12); opacity: 0.92; }
+    }
+
+    @keyframes visualIdle {
+      0%, 100% { transform: translate(0, 0) scale(1.35); filter: brightness(1) saturate(1); }
+      19% { transform: translate(-2px, 1px) scale(1.38); filter: brightness(1.08) saturate(1.12); }
+      47% { transform: translate(2px, -2px) scale(1.33); filter: brightness(0.96) saturate(1.24); }
+      73% { transform: translate(-1px, 2px) scale(1.37); filter: brightness(1.12) saturate(1.06); }
+    }
+
+    @keyframes energyFieldBreathe {
+      0%, 100% { transform: translate(-50%, -50%) scale(0.76); opacity: 0.3; }
+      21% { transform: translate(-50%, -50%) scale(1.04); opacity: 0.74; }
+      52% { transform: translate(-50%, -50%) scale(0.88); opacity: 0.42; }
+      78% { transform: translate(-50%, -50%) scale(1.12); opacity: 0.64; }
+    }
+
+    @keyframes visualSurge {
+      0% { transform: translate(0, 0) scale(1.35); filter: brightness(1) saturate(1); }
+      24% { transform: translate(-3px, 2px) scale(1.47); filter: brightness(1.46) saturate(1.62) hue-rotate(10deg); }
+      51% { transform: translate(3px, -3px) scale(1.29); filter: brightness(0.9) saturate(1.94) hue-rotate(-10deg); }
+      76% { transform: translate(-1px, 1px) scale(1.43); filter: brightness(1.32) saturate(1.5); }
+      100% { transform: translate(0, 0) scale(1.35); filter: brightness(1) saturate(1); }
+    }
+
+    @keyframes energyFieldSurge {
+      0% { transform: translate(-50%, -50%) scale(0.76); opacity: 0.28; }
+      28% { transform: translate(-50%, -50%) scale(1.36); opacity: 0.96; }
+      58% { transform: translate(-50%, -50%) scale(0.94); opacity: 0.48; }
+      80% { transform: translate(-50%, -50%) scale(1.22); opacity: 0.82; }
+      100% { transform: translate(-50%, -50%) scale(0.76); opacity: 0.3; }
     }
 
     @keyframes ringSpin {
