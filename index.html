@@ -1974,21 +1974,22 @@
     }
   
 
-    /* Holographic-metal finish for the final shuffled order. */
+
+    /* Clear glossy pastel-plastic finish for the final shuffled order. */
     .order-list li {
       position: relative;
       isolation: isolate;
       overflow: hidden;
       background:
-        linear-gradient(105deg, rgba(255, 255, 255, 0.32), transparent 18%),
-        linear-gradient(120deg, #78dfb0 0%, #9bd6ff 19%, #d8b2ff 38%, #ffe28d 55%, #ffabd8 73%, #83e8bd 100%);
-      box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.72), inset 0 -2px 0 rgba(20, 75, 58, 0.24);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.74) 0 6%, rgba(255, 255, 255, 0.18) 24%, transparent 52%),
+        linear-gradient(120deg, #d0f0c0 0%, #ace9a5 36%, #fff3a5 72%, #baed91 100%);
+      box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.88), inset 0 -2px 0 rgba(52, 94, 43, 0.18);
     }
 
     .order-list li::before {
       position: relative;
       z-index: 1;
-      background: linear-gradient(135deg, #fff6b6 0%, #c8f4ff 26%, #e4c4ff 50%, #ffe99d 74%, #b5f4cf 100%);
+      background: linear-gradient(135deg, #fffbd2 0%, #e8f8dc 38%, #fff3a5 68%, #d0f0c0 100%);
     }
 
     .order-list li::after {
@@ -1997,21 +1998,21 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background: linear-gradient(112deg, transparent 18%, rgba(255, 255, 255, 0.04) 30%, rgba(255, 255, 255, 0.66) 44%, rgba(167, 243, 255, 0.5) 50%, rgba(255, 215, 242, 0.46) 57%, transparent 72%);
+      background: linear-gradient(112deg, transparent 28%, rgba(255, 255, 255, 0.12) 36%, rgba(255, 255, 255, 0.72) 46%, rgba(255, 255, 255, 0.34) 54%, transparent 66%);
       transform: translateX(-118%);
-      animation: orderGlossSweep 6.8s cubic-bezier(0.32, 0.08, 0.3, 0.96) infinite;
+      animation: orderPlasticGloss 8.4s cubic-bezier(0.32, 0.08, 0.3, 0.96) infinite;
     }
 
     .order-list li.active {
       background:
-        linear-gradient(105deg, rgba(255, 255, 255, 0.42), transparent 20%),
-        linear-gradient(120deg, #74f1c1 0%, #a9e7ff 22%, #dfb8ff 43%, #ffe47d 60%, #ff9ecf 78%, #7ae3ab 100%);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0 7%, rgba(255, 255, 255, 0.2) 25%, transparent 54%),
+        linear-gradient(120deg, #baed91 0%, #ace9a5 40%, #fff000 72%, #d0f0c0 100%);
     }
 
     .order-list li.is-first {
       background:
-        linear-gradient(105deg, rgba(255, 255, 255, 0.5), transparent 22%),
-        linear-gradient(120deg, #9ff6c8 0%, #b7edff 22%, #e5c0ff 44%, #fff09a 61%, #ffb1da 78%, #97efb8 100%);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0 8%, rgba(255, 255, 255, 0.24) 28%, transparent 56%),
+        linear-gradient(120deg, #d0f0c0 0%, #baed91 42%, #fff3a5 74%, #ace9a5 100%);
     }
 
     .order-name {
@@ -2019,18 +2020,18 @@
       z-index: 1;
     }
 
-    @keyframes orderGlossSweep {
-      0%, 14% { transform: translateX(-118%); opacity: 0; }
-      34% { opacity: 0.82; }
-      68% { opacity: 0.56; }
-      86%, 100% { transform: translateX(118%); opacity: 0; }
+    @keyframes orderPlasticGloss {
+      0%, 16% { transform: translateX(-118%); opacity: 0; }
+      36% { opacity: 0.8; }
+      68% { opacity: 0.5; }
+      88%, 100% { transform: translateX(118%); opacity: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .order-list li::after {
         animation: none;
         transform: translateX(0);
-        opacity: 0.32;
+        opacity: 0.26;
       }
     }
 </style>
