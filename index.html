@@ -496,6 +496,15 @@
       border-bottom: 2px solid #b6ff88;
     }
 
+    .machine-visual {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      transform: scale(1.35);
+      transform-origin: 50% 42%;
+    }
+
     .machine::before,
     .machine::after {
       content: "";
@@ -1937,6 +1946,7 @@
             <section class="rotation-card console-panel">
               <div class="randomizer">
                 <div class="machine" aria-hidden="true">
+                  <div class="machine-visual">
                   <span class="particle p1"></span>
                   <span class="particle p2"></span>
                   <span class="particle p3"></span>
@@ -1947,6 +1957,7 @@
                   <div class="ring ring-two"></div>
                   <div class="orb"></div>
                   <div class="portal-callout">SUMMON ROTATION</div>
+                  </div>
                   <div id="machineStatus" class="screen-label">SUMMON ROTATION</div>
                 </div>
 
